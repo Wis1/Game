@@ -13,6 +13,8 @@ import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
 
+import java.awt.*;
+
 
 public class TicTacToeApp extends Application {
 
@@ -42,6 +44,8 @@ public class TicTacToeApp extends Application {
             }
         }
 
+
+
         primaryStage.setTitle("Tic-Tac-Toe");
         primaryStage.setScene(scene);
         primaryStage.show();
@@ -50,9 +54,10 @@ public class TicTacToeApp extends Application {
 
     public class Title extends StackPane{
         private Text text= new Text();
+        Rectangle border= new Rectangle(200,200);
         public Title(){
 
-            Rectangle border= new Rectangle(200,200);
+
             border.setFill(null);
             border.setStroke(Color.BLACK);
             text.setFont(Font.font(72));
@@ -61,11 +66,13 @@ public class TicTacToeApp extends Application {
             getChildren().addAll(border, text);
 
             setOnMouseClicked(event-> {
-                if(!turnX)
-                    return;
+                        if (!turnX)
+                            return;
                         drawX();
-                        turnX=false;
-            });
+                        turnX = false;
+                        computerMovement();
+                    });
+
 
         }
 
@@ -74,6 +81,15 @@ public class TicTacToeApp extends Application {
         }
         private void draw0(){
             text.setText("0");
+        }
+        private void computerMovement(){
+            if(!turnX) {
+
+                setTranslateX(0);
+                setTranslateY(200);
+                draw0();
+            }
+            turnX=true;
         }
     }
 }

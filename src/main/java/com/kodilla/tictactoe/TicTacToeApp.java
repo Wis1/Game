@@ -1,6 +1,7 @@
 package com.kodilla.tictactoe;
 
 import javafx.application.Application;
+import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
@@ -24,6 +25,7 @@ public class TicTacToeApp extends Application {
     public static void main(String[] args) {
         launch(args);
     }
+    GridPane grid = new GridPane();
 
     @Override
     public void start(Stage primaryStage) throws Exception {
@@ -32,30 +34,39 @@ public class TicTacToeApp extends Application {
         Background background = new Background(backgroundImage);
         Button button= new Button();
         button.setText("New Game");
+        grid.setAlignment(Pos.CENTER);
+        grid.setHgap(65.5);
+        grid.setVgap(5.0);
 
-        GridPane grid = new GridPane();
         grid.setBackground(background);
-        grid.getChildren().add(button);
+//        grid.getChildren().add(button);
+        grid.add(button,5,80);
 
-        Scene scene = new Scene(grid, 600, 800, Color.BLACK);
-        for(int i=1; i<4;i++){
-            for(int j=0; j<3; j++){
-                Tile tile= new Tile();
-                tile.setTranslateX(j*200);
-                tile.setTranslateY(i*200);
-                grid.getChildren().add(tile);
-
-            }
-        }
+        Scene scene = new Scene(grid, 600, 700, Color.BLACK);
+        makeBoard();
         primaryStage.setTitle("Tic-Tac-Toe");
         primaryStage.setScene(scene);
         primaryStage.show();
 
-        button.setOnMouseClicked(event->{
-            primaryStage.close();
+        button.setOnAction(event->{
+            grid.getChildren().removeAll(grid.getChildren());
+            grid.getChildren().add(button);
+            makeBoard();
+            counter=0;
             primaryStage.setScene(scene);
             primaryStage.show();
         });
+    }
+    private void makeBoard(){
+        for(int i=0; i<3;i++) {
+            for (int j = 0; j < 3; j++) {
+                Tile tile = new Tile();
+                tile.setTranslateX(j * 200);
+                tile.setTranslateY(i * 200);
+                grid.getChildren().add(tile);
+
+            }
+        }
     }
 
 

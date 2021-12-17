@@ -12,7 +12,9 @@ import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.stream.Collectors;
 
@@ -20,7 +22,6 @@ import java.util.stream.Collectors;
 public class TicTacToeApp extends Application {
 
     private final Image imageBack = new Image("file:src/main/resources/pencil.png");
-    private int result=0;
     public static void main(String[] args) {
         launch(args);
     }
@@ -71,30 +72,36 @@ public class TicTacToeApp extends Application {
             for (int j = 0; j < 3; j++) {
                 Tile tile = new Tile();
                 grid.add(tile, i, j);
-                tile.setOnMouseClicked(e -> {
-                    System.out.println("mouse clicked");
-                    if (tile.isEmpty()&&!checkWin()) {
-                        tile.drawX();
-                        if (!checkWin()){
-                            computerMovement();
-                            checkWin();
+
+                    tile.setOnMouseClicked(e -> {
+                        System.out.println("mouse clicked");
+                        if(!endOfTheGame()) {
+                            if (tile.isEmpty()) {
+                                tile.drawX();
+                                checkWin("X");
+                                String resultX = checkWin("X");
+                                String result0 = checkWin("0");
+                                if (resultX == null && result0 == null) {
+                                    computerMovement();
+                                    checkWin("0");
+                                }
+                            }else {
+                                System.out.println("Full board");
+                                showResult(null);
+                            }
                         }
-                        else {
-                            showResult();
-                            System.out.println("A draw or someone won");
-                        }
-                    }
-                });
+                    });
             }
         }
     }
 
-    private boolean checkWin() {
-        List<Tile> tileListX = grid.getChildren().stream()
+
+    private String checkWin(String sign) {
+         List<Tile> tileListX = grid.getChildren().stream()
                 .filter(node -> node instanceof Tile)
                 .map(node -> (Tile) node)
                 .filter(tile -> !(tile.isEmpty()))
-                .filter(tile -> tile.getText().equals("X"))
+                .filter(tile -> tile.getText().equals(sign))
                 .collect(Collectors.toList());
         List<Integer> columnList = tileListX.stream()
                 .map(GridPane::getColumnIndex)
@@ -103,19 +110,43 @@ public class TicTacToeApp extends Application {
                 .map(GridPane::getRowIndex)
                 .collect(Collectors.toList());
 
-        List<Tile> tileList0 = grid.getChildren().stream()
-                .filter(node -> node instanceof Tile)
-                .map(node -> (Tile) node)
-                .filter(tile -> !(tile.isEmpty()))
-                .filter(tile -> tile.getText().equals("0"))
-                .collect(Collectors.toList());
-        List<Integer> columnList0 = tileList0.stream()
-                .map(GridPane::getColumnIndex)
-                .collect(Collectors.toList());
-        List<Integer> rowList0 = tileList0.stream()
-                .map(GridPane::getRowIndex)
-                .collect(Collectors.toList());
+        Map<Integer,Integer> rows= new HashMap<>();
+        Map<Integer,Integer> columns= new HashMap<>();
+        for (Tile tile:tileListX){
+            int row= GridPane.getRowIndex(tile);
+            int column= GridPane.getColumnIndex(tile);
+            if(rows.containsKey(row)){
+                rows.put(row, rows.get(row)+1);
+            }else{
+                rows.put(row, 1);
+            }
+            if (columns.containsKey(column)){
+                columns.put(column,columns.get(column)+1);
+            }else{
+                columns.put(column, 1);
+            }
+        }
+        System.out.println(rows);
+        System.out.println(columns);
 
+        boolean rowsMatch = rows.values().stream()
+                .anyMatch(value -> value == 3);
+
+        boolean columnsMatch = columns.values().stream()
+                .anyMatch((value -> value == 3));
+
+        if (rowsMatch||columnsMatch){
+//            Rectangle wonRectangle= new Rectangle(200,200);
+//            wonRectangle.setFill(Color.GREEN);
+//            wonRectangle.setStroke(Color.BLACK);
+//
+//            for(Map.Entry<Integer, Integer>entry:columns.entrySet()) {
+//                grid.add(wonRectangle, entry.getKey(), entry.getValue());
+//                grid.getChildren().addAll(wonRectangle);
+//            }
+            showResult(sign);
+            return sign;
+        }
         boolean firstField=false, secondField=false, thirdField=false;
 
         for(int z=0; z<columnList.size();z++){
@@ -134,89 +165,21 @@ public class TicTacToeApp extends Application {
                 fifthField=true;
         }
         if((firstField&&secondField&&thirdField)||(secondField&&fourthField&&fifthField)) {
-            result = 1;
-            return true;
+            showResult(sign);
+            return sign;
         }
-        boolean firstField0=false, secondField0=false, thirdField0=false;
-        for(int e=0; e<columnList0.size();e++){
-            if (columnList0.get(e)==0&&rowList0.get(e)==0)
-                firstField0 =true;
-            if (columnList0.get(e)==1&&rowList0.get(e)==1)
-                secondField0=true;
-            if (columnList0.get(e)==2&&rowList0.get(e)==2)
-                thirdField0=true;
-        }
-
-        boolean fourthField0=false,fifthField0=false;
-        for(int f=0; f<columnList0.size();f++){
-            if (columnList0.get(f)==0&&rowList0.get(f)==2)
-                fourthField0 =true;
-            if (columnList0.get(f)==2&&rowList0.get(f)==0)
-                fifthField0=true;
-        }
-        if((firstField0&&secondField0&&thirdField0)||(fourthField0&&fifthField0&&secondField0)) {
-            result = 2;
-            showResult();
-            return true;
-        }
-
-        int number0 = 0,number1=1, number2 = 2;
-        int counter0 = 0, counter1=0, counter2=0;
-        int counterRow0=0, counterRow1=0, counterRow2=0;
-
-        for (int i = 0; i < columnList.size(); i++) {
-                if (columnList.get(i) == number0)
-                    counter0++;
-                if (columnList.get(i)==number1)
-                    counter1++;
-                if (columnList.get(i)==number2)
-                    counter2++;
-                if (rowList.get(i)==number0)
-                    counterRow0++;
-                if (rowList.get(i)==number1)
-                    counterRow1++;
-                if (rowList.get(i)==number2)
-                    counterRow2++;
-        }
-        int counterColumn0 = 0, counterColumn1=0, counterColumn2=0;
-        int counterRow00=0, counterRow01=0, counterRow02=0;
-
-        for(int k=0;k<columnList0.size();k++){
-                if (columnList0.get(k) == number0)
-                    counterColumn0++;
-                if (columnList0.get(k)==number1)
-                    counterColumn1++;
-                if (columnList0.get(k)==number2)
-                    counterColumn2++;
-                if (rowList0.get(k)==number0)
-                    counterRow00++;
-                if (rowList0.get(k)==number1)
-                    counterRow01++;
-                if (rowList0.get(k)==number2)
-                    counterRow02++;
-        }
-        if (counter0==3||counter1==3||counter2==3||counterRow0==3||counterRow1==3||counterRow2==3){
-            result=1;
-            System.out.println("You won");
-            return true;
-        } if (counterColumn0==3||counterColumn1==3||counterColumn2==3||counterRow00==3||counterRow01==3||counterRow02==3){
-            System.out.println("Computer won");
-            result=2;
-            showResult();
-            return true;
-        }
-        else {
-            if (tileListX.size()==5) {
-                result = 0;
-                showResult();
-            }
-            return false;
-        }
+        return null;
     }
-    public void showResult(){
+    public void fillWonRectangle(){
+        Rectangle wonRectangle= new Rectangle(200,200);
+        wonRectangle.setFill(Color.GREEN);
+        wonRectangle.setStroke(Color.BLACK);
+    }
+    public void showResult(String text){
+
         Label resultOfGame= new Label("You Won!");
         Label resultOfGame1= new Label("Computer Won");
-        Label resultOfGame2= new Label("Tie");
+        Label resultOfGame2= new Label("End of the game");
         resultOfGame.setAlignment(Pos.TOP_LEFT);
         resultOfGame.setFont(Font.font(36));
         resultOfGame.setTextFill(Color.RED);
@@ -224,14 +187,27 @@ public class TicTacToeApp extends Application {
         resultOfGame1.setFont(Font.font(28));
         resultOfGame1.setTextFill(Color.RED);
         resultOfGame2.setAlignment(Pos.TOP_LEFT);
-        resultOfGame2.setFont(Font.font(36));
+        resultOfGame2.setFont(Font.font(26));
         resultOfGame2.setTextFill(Color.RED);
-        if(result==1)
-            grid.add(resultOfGame,1,8);
-        if(result==2)
-            grid.add(resultOfGame1,1,8);
-        if (result==0)
-            grid.add(resultOfGame2,1,8);
+        if("X".equals(text)) {
+            grid.add(resultOfGame, 1, 8);
+            grid.add(resultOfGame2, 1, 9);
+        }
+        if("0".equals(text)) {
+            grid.add(resultOfGame1, 1, 8);
+            grid.add(resultOfGame2, 1, 9);
+        }
+        if (text==null)
+            grid.add(resultOfGame2,1,9);
+    }
+    public boolean endOfTheGame(){
+        List<Tile> tileList = grid.getChildren().stream()
+                .filter(node -> node instanceof Tile)
+                .map(node -> (Tile) node)
+                .filter(Tile::isEmpty)
+                .collect(Collectors.toList());
+        boolean checkFullBoard= checkWin("X") == null && tileList.size() == 0;
+        return ("X").equals(checkWin("X")) || ("0").equals(checkWin("0")) || checkFullBoard;
     }
 }
 
@@ -263,4 +239,5 @@ class Tile extends StackPane{
         public void draw0(){
             text.setText("0");
         }
+
     }

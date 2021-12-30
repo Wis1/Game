@@ -3,55 +3,74 @@ package com.kodilla.tictactoe;
 import javafx.application.Application;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
+import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
-import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
-import javafx.scene.text.Text;
+import javafx.stage.Modality;
 import javafx.stage.Stage;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
+
+import java.util.*;
 import java.util.stream.Collectors;
 
 
 public class TicTacToeApp extends Application {
 
-    private final Image imageBack = new Image("file:src/main/resources/pencil.png");
+
     public static void main(String[] args) {
         launch(args);
     }
 
+    private final Image imageBack = new Image("file:src/main/resources/pencil.png");
+    boolean endGame=false;
+    int wonComputer=0;
+    int wonUser=0;
+
     GridPane grid = new GridPane();
+    Button button = new Button();
+    MenuBar menuBar = new MenuBar();
+    Label resultOfGame= new Label();
+    Label score= new Label();
+    VBox vBox = new VBox(menuBar, grid, button, resultOfGame, score);
 
     @Override
     public void start(Stage primaryStage) throws Exception {
+
+        Menu menu1 = new Menu("Exit the game");
+        MenuItem menuItem= new MenuItem("Exit");
+        menuItem.setOnAction(event-> exitGame());
+        menu1.getItems().add(menuItem);
+        menuBar.getMenus().add(menu1);
+
         BackgroundSize backgroundSize = new BackgroundSize(100, 100, true, true, true, false);
         BackgroundImage backgroundImage = new BackgroundImage(imageBack, BackgroundRepeat.REPEAT, BackgroundRepeat.NO_REPEAT, BackgroundPosition.CENTER, backgroundSize);
         Background background = new Background(backgroundImage);
-        Button button = new Button();
-        button.setText("New Game");
-        grid.setAlignment(Pos.CENTER);
 
+        button.setText("New Game");
+        button.setOnAction(event -> {
+            newGame();
+        });
+
+        grid.setAlignment(Pos.CENTER);
         grid.setBackground(background);
-        grid.add(button, 2, 8);
-        Scene scene = new Scene(grid, 600, 700, Color.BLACK);
+
+        Scene scene = new Scene(vBox, 600, 800, Color.BLACK);
         makeBoard();
-        primaryStage.setTitle("Tic-Tac-Toe");
+
         primaryStage.setScene(scene);
         primaryStage.show();
+    }
 
-        button.setOnAction(event -> {
-            grid.getChildren().removeAll(grid.getChildren());
-            grid.getChildren().add(button);
-            makeBoard();
-            primaryStage.setScene(scene);
-            primaryStage.show();
-        });
+    private void exitGame(){
+        System.exit(0);
+    }
+    private void newGame(){
+        grid.getChildren().removeAll(grid.getChildren());
+        endGame= false;
+        resultOfGame.setText("");
+        makeBoard();
+
     }
 
     private void computerMovement() {
@@ -74,30 +93,24 @@ public class TicTacToeApp extends Application {
                 grid.add(tile, i, j);
 
                     tile.setOnMouseClicked(e -> {
-                        System.out.println("mouse clicked");
-                        if(!endOfTheGame()) {
-                            if (tile.isEmpty()) {
+                            if (tile.isEmpty()&&!endGame) {
                                 tile.drawX();
-                                checkWin("X");
                                 String resultX = checkWin("X");
                                 String result0 = checkWin("0");
                                 if (resultX == null && result0 == null) {
                                     computerMovement();
-                                    checkWin("0");
                                 }
-                            }else {
-                                System.out.println("Full board");
-                                showResult(null);
                             }
-                        }
+                        endOfTheGame();
                     });
             }
         }
     }
 
 
+
     private String checkWin(String sign) {
-         List<Tile> tileListX = grid.getChildren().stream()
+        List<Tile> tileListX = grid.getChildren().stream()
                 .filter(node -> node instanceof Tile)
                 .map(node -> (Tile) node)
                 .filter(tile -> !(tile.isEmpty()))
@@ -110,134 +123,204 @@ public class TicTacToeApp extends Application {
                 .map(GridPane::getRowIndex)
                 .collect(Collectors.toList());
 
-        Map<Integer,Integer> rows= new HashMap<>();
-        Map<Integer,Integer> columns= new HashMap<>();
-        for (Tile tile:tileListX){
-            int row= GridPane.getRowIndex(tile);
-            int column= GridPane.getColumnIndex(tile);
-            if(rows.containsKey(row)){
-                rows.put(row, rows.get(row)+1);
-            }else{
+        Map<Integer, Integer> rows = new HashMap<>();
+        Map<Integer, Integer> columns = new HashMap<>();
+        int row = 0;
+        int column = 0;
+
+        for (Tile tile : tileListX) {
+            row = GridPane.getRowIndex(tile);
+            column = GridPane.getColumnIndex(tile);
+            if (rows.containsKey(row)) {
+                rows.put(row, rows.get(row) + 1);
+            } else {
                 rows.put(row, 1);
             }
-            if (columns.containsKey(column)){
-                columns.put(column,columns.get(column)+1);
-            }else{
+            if (columns.containsKey(column)) {
+                columns.put(column, columns.get(column) + 1);
+            } else {
                 columns.put(column, 1);
             }
         }
-        System.out.println(rows);
-        System.out.println(columns);
+        Optional<Integer> optionalRow = rows.entrySet().stream()
+                .filter(entry -> entry.getValue() == 3)
+                .map(Map.Entry::getKey)
+                .findAny();
 
-        boolean rowsMatch = rows.values().stream()
-                .anyMatch(value -> value == 3);
 
-        boolean columnsMatch = columns.values().stream()
-                .anyMatch((value -> value == 3));
+        Optional<Integer> optionalColumn = columns.entrySet().stream()
+                .filter(entry -> entry.getValue() == 3)
+                .map(Map.Entry::getKey)
+                .findAny();
 
-        if (rowsMatch||columnsMatch){
-//            Rectangle wonRectangle= new Rectangle(200,200);
-//            wonRectangle.setFill(Color.GREEN);
-//            wonRectangle.setStroke(Color.BLACK);
-//
-//            for(Map.Entry<Integer, Integer>entry:columns.entrySet()) {
-//                grid.add(wonRectangle, entry.getKey(), entry.getValue());
-//                grid.getChildren().addAll(wonRectangle);
-//            }
-            showResult(sign);
+        if (optionalRow.isPresent()) {
+            int rowOfWin = optionalRow.get();
+            changeWonRowColour(rowOfWin, sign);
             return sign;
         }
-        boolean firstField=false, secondField=false, thirdField=false;
-
-        for(int z=0; z<columnList.size();z++){
-            if (columnList.get(z)==0&&rowList.get(z)==0)
-                firstField =true;
-            if (columnList.get(z)==1&&rowList.get(z)==1)
-                secondField=true;
-            if (columnList.get(z)==2&&rowList.get(z)==2)
-                thirdField=true;
-        }
-        boolean fourthField= false, fifthField= false;
-        for(int m=0; m<columnList.size();m++){
-            if (columnList.get(m)==0&&rowList.get(m)==2)
-                fourthField =true;
-            if (columnList.get(m)==2&&rowList.get(m)==0)
-                fifthField=true;
-        }
-        if((firstField&&secondField&&thirdField)||(secondField&&fourthField&&fifthField)) {
-            showResult(sign);
+        if (optionalColumn.isPresent()) {
+            int columnOfWin = optionalColumn.get();
+            changeWonColumnColour(columnOfWin, sign);
             return sign;
         }
+        boolean firstField = false, secondField = false, thirdField = false;
+
+        for (int z = 0; z < columnList.size(); z++) {
+            if (columnList.get(z) == 0 && rowList.get(z) == 0)
+                firstField = true;
+            if (columnList.get(z) == 1 && rowList.get(z) == 1)
+                secondField = true;
+            if (columnList.get(z) == 2 && rowList.get(z) == 2)
+                thirdField = true;
+        }
+        boolean fourthField = false, fifthField = false;
+        for (int m = 0; m < columnList.size(); m++) {
+            if (columnList.get(m) == 0 && rowList.get(m) == 2)
+                fourthField = true;
+            if (columnList.get(m) == 2 && rowList.get(m) == 0)
+                fifthField = true;
+        }
+        if (firstField && secondField && thirdField) {
+            changeCrossColour(sign);
+            return sign;
+        }
+        if (secondField && fourthField && fifthField){
+            changeOppositeCrossColour(sign);
+            return sign;
+        }
+
         return null;
     }
-    public void fillWonRectangle(){
-        Rectangle wonRectangle= new Rectangle(200,200);
-        wonRectangle.setFill(Color.GREEN);
-        wonRectangle.setStroke(Color.BLACK);
+
+    public void changeWonRowColour(int row, String sign){
+        grid.getChildren().stream()
+                .filter(node -> node instanceof Tile)
+                .map(node -> (Tile) node)
+                .filter(tile -> !(tile.isEmpty()))
+                .filter(tile -> tile.getText().equals(sign))
+                .filter(tile->GridPane.getRowIndex(tile)==row)
+                .forEach(tile->tile.setStyle("-fx-background-color:red"));
     }
+    public void changeWonColumnColour(int column, String sign){
+        grid.getChildren().stream()
+                .filter(node -> node instanceof Tile)
+                .map(node -> (Tile) node)
+                .filter(tile -> !(tile.isEmpty()))
+                .filter(tile -> tile.getText().equals(sign))
+                .filter(tile->GridPane.getColumnIndex(tile)==column)
+                .forEach(tile->tile.setStyle("-fx-background-color:red"));
+    }
+    public void changeCrossColour(String sign) {
+        grid.getChildren().stream()
+                .filter(node -> node instanceof Tile)
+                .map(node -> (Tile) node)
+                .filter(tile -> !(tile.isEmpty()))
+                .filter(tile -> tile.getText().equals(sign))
+                .filter(tile -> GridPane.getRowIndex(tile) == GridPane.getColumnIndex(tile))
+                .forEach(tile -> tile.setStyle("-fx-background-color: red"));
+    }
+    public void changeOppositeCrossColour(String sign) {
+        grid.getChildren().stream()
+                .filter(node -> node instanceof Tile)
+                .map(node -> (Tile) node)
+                .filter(tile -> !(tile.isEmpty()))
+                .filter(tile -> tile.getText().equals(sign))
+                .filter(tile -> GridPane.getRowIndex(tile) == 1 && GridPane.getColumnIndex(tile)== 1)
+                .forEach(tile -> tile.setStyle("-fx-background-color: red"));
+
+        grid.getChildren().stream()
+                .filter(node -> node instanceof Tile)
+                .map(node -> (Tile) node)
+                .filter(tile -> !(tile.isEmpty()))
+                .filter(tile -> tile.getText().equals(sign))
+                .filter(tile -> GridPane.getRowIndex(tile) ==2&& GridPane.getColumnIndex(tile)==0)
+                .forEach(tile -> tile.setStyle("-fx-background-color: red"));
+
+        grid.getChildren().stream()
+                .filter(node -> node instanceof Tile)
+                .map(node -> (Tile) node)
+                .filter(tile -> !(tile.isEmpty()))
+                .filter(tile -> tile.getText().equals(sign))
+                .filter(tile -> GridPane.getRowIndex(tile) == 0 && GridPane.getColumnIndex(tile)==2)
+                .forEach(tile -> tile.setStyle("-fx-background-color: red"));
+    }
+
     public void showResult(String text){
 
-        Label resultOfGame= new Label("You Won!");
-        Label resultOfGame1= new Label("Computer Won");
-        Label resultOfGame2= new Label("End of the game");
         resultOfGame.setAlignment(Pos.TOP_LEFT);
         resultOfGame.setFont(Font.font(36));
         resultOfGame.setTextFill(Color.RED);
-        resultOfGame1.setAlignment(Pos.TOP_LEFT);
-        resultOfGame1.setFont(Font.font(28));
-        resultOfGame1.setTextFill(Color.RED);
-        resultOfGame2.setAlignment(Pos.TOP_LEFT);
-        resultOfGame2.setFont(Font.font(26));
-        resultOfGame2.setTextFill(Color.RED);
+        score.setAlignment(Pos.TOP_LEFT);
+        score.setFont(Font.font(30));
+        score.setTextFill(Color.BLUE);
+
         if("X".equals(text)) {
-            grid.add(resultOfGame, 1, 8);
-            grid.add(resultOfGame2, 1, 9);
+            resultOfGame.setText("You won!");
+            score.setText("You: "+wonUser+ "   Computer: "+ wonComputer);
         }
         if("0".equals(text)) {
-            grid.add(resultOfGame1, 1, 8);
-            grid.add(resultOfGame2, 1, 9);
+           resultOfGame.setText("Computer won");
+            score.setText("You: "+wonUser+ "   Computer: "+ wonComputer);
         }
         if (text==null)
-            grid.add(resultOfGame2,1,9);
+            resultOfGame.setText("The end the game");
     }
-    public boolean endOfTheGame(){
+    public void endOfTheGame(){
         List<Tile> tileList = grid.getChildren().stream()
                 .filter(node -> node instanceof Tile)
                 .map(node -> (Tile) node)
                 .filter(Tile::isEmpty)
                 .collect(Collectors.toList());
-        boolean checkFullBoard= checkWin("X") == null && tileList.size() == 0;
-        return ("X").equals(checkWin("X")) || ("0").equals(checkWin("0")) || checkFullBoard;
+
+        if ("X".equals(checkWin("X"))){
+            wonUser++;
+            showResult("X");
+            endGame=true;
+
+        }
+        if ("0".equals((checkWin("0")))){
+            wonComputer++;
+            showResult("0");
+            endGame= true;
+        }
+
+        if (endGame){
+            Label label= new Label("Play again or exit game");
+            label.setAlignment(Pos.CENTER);
+            Button buttonNewGame= new Button("NEW GAME");
+            Button buttonContinueGame= new Button("Continue Game");
+            Button buttonExit= new Button("EXIT");
+
+            HBox hBox= new HBox( 20,buttonNewGame,buttonContinueGame, buttonExit);
+            hBox.setAlignment(Pos.BASELINE_CENTER);
+
+            VBox vBox1= new VBox(label, hBox);
+
+            Scene scene1= new Scene(vBox1,350,100);
+            Stage stage= new Stage();
+            buttonContinueGame.setOnAction(event->{
+                stage.close();
+                newGame();
+            });
+            buttonNewGame.setOnAction(e->{
+                stage.close();
+                wonComputer=0;
+                wonUser=0;
+                score.setText("");
+                newGame();
+            });
+            buttonExit.setOnAction(event -> exitGame());
+            stage.initModality(Modality.APPLICATION_MODAL);
+            stage.setTitle("End the game");
+            stage.setScene(scene1);
+
+            stage.showAndWait();
+
+        }
+
+        if (tileList.size()==0){
+            showResult(null);
+        }
     }
 }
 
-
-class Tile extends StackPane{
-        public Text text= new Text();
-
-        public Tile(){
-
-            Rectangle border= new Rectangle(200,200);
-            border.setFill(null);
-            border.setStroke(Color.BLACK);
-            text.setFont(Font.font(72));
-
-            setAlignment(Pos.CENTER);
-            getChildren().addAll(border,text);
-        }
-
-        public boolean isEmpty() {
-            return text.getText()==null||text.getText().equals("");
-        }
-        public String getText(){
-            return text.getText();
-        }
-
-        public void drawX(){
-            text.setText("X");
-        }
-        public void draw0(){
-            text.setText("0");
-        }
-
-    }
